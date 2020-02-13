@@ -1,4 +1,4 @@
-# A Typping Game for Kids
+# A Typing Game for Kids
 
 ## Quick Start
 
