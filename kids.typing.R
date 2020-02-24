@@ -58,9 +58,9 @@ draw_keyboard <- function(d, pressed = "", message = "", target = "", typed = ""
     geom_rect(aes(xmin = x, ymin = y, xmax = x + w - .2, ymax = y + .8, fill = pressed),
               color = "#333333") +
     geom_text(aes(x = x + .2, y = y + .2 + ifelse(shift == "", .2, 0), label = name),
-              hjust = 0, vjust = .5) +
+              hjust = 0, vjust = .5, size = 8) +
     geom_text(aes(x = x + .2, y = y + .6, label = shift),
-              hjust = 0, vjust = .5) +
+              hjust = 0, vjust = .5, size = 8) +
     scale_fill_manual(values = c("#ccffcc", "#ccccff")) +
     guides(fill = FALSE) +
     geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -69,13 +69,13 @@ draw_keyboard <- function(d, pressed = "", message = "", target = "", typed = ""
               fill = "white") +
     geom_text(aes(x = x, y = y, label = label),
               data = tibble(x = sum(range(d$x)) / 2, y = max(d$y) + 2, label = message),
-              fontface = "bold", size = 12, color = "red") +
+              fontface = "bold", size = 20, color = "red") +
     geom_text(aes(x = x, y = y, label = label),
               data = tibble(x = 0, y = max(d$y) + 2.2, label = target),
-              fontface = "bold", size = 10, color = "black", hjust = 0, vjust = .5) +
+              fontface = "bold", size = 16, color = "black", hjust = 0, vjust = .5) +
     geom_text(aes(x = x, y = y, label = label),
               data = tibble(x = 0, y = max(d$y) + 1.5, label = typed),
-              fontface = "bold", size = 10, color = "blue", hjust = 0, vjust = .5) +
+              fontface = "bold", size = 16, color = "blue", hjust = 0, vjust = .5) +
     theme_void()
   print(g, newpage = newpage)
   if (newpage) {
@@ -115,13 +115,20 @@ demo <- function() {
   dev.off()
 }
 
-play <- function() {
+play <- function(charList = "ASDFJKL;", len = 10, random = FALSE) {
   kbd <- build_keyboard_layout()
-  target <- paste(LETTERS, collapse = "")
+  charList <- strsplit(charList, "")[[1]]
+  if (random) {
+    target <- paste(sample(charList, len, replace = TRUE), collapse = "")
+  } else {
+    target <- paste(rep_len(charList, len), collapse = "")
+  }
   to_exit <- FALSE
   while (!to_exit) {
     typed <- ""
-    draw_keyboard(kbd, "", "", target, typed, newpage = TRUE)
+    offset <- nchar(typed) + 1
+    to_type <- substr(target, offset, offset)
+    draw_keyboard(kbd, to_type, "", target, typed, newpage = TRUE)
     esc_pressed = FALSE
     while (!to_exit) {
       v <- getGraphicsEvent()
@@ -138,18 +145,19 @@ play <- function() {
         v <- str_to_upper(v)
       }
       if (v %in% LETTERS) {
-        offset <- nchar(typed) + 1
-        if (substr(target, offset, offset) == v) {
+        if (to_type == v) {
           typed <- paste0(typed, v)
         }
       }
       if (typed == target) break
-      draw_keyboard(kbd, v, "", target, typed)
+      offset <- nchar(typed) + 1
+      to_type <- substr(target, offset, offset)
+      draw_keyboard(kbd, to_type, "", target, typed)
     }
     if (to_exit) break
     draw_keyboard(kbd, "", "Congratuations!", newpage = TRUE)
     Sys.sleep(3)
-    target <- paste(sample(LETTERS, 10, replace = TRUE), collapse = "")
+    target <- paste(sample(charList, len, replace = TRUE), collapse = "")
   }
   dev.off()
 }
